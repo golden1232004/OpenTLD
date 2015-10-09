@@ -9,4 +9,4 @@ TODO
 cmake_install.cmake
 *.a
 build/
-
+cscope.*
