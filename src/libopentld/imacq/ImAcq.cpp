@@ -47,6 +47,7 @@ ImAcq *imAcqAlloc()
     imAcq->lastFrame = 0;
     imAcq->camNo = 0;
     imAcq->fps = 24;
+    imAcq->writer = NULL;
     return imAcq;
 }
 
@@ -54,7 +55,11 @@ void imAcqInit(ImAcq *imAcq)
 {
     if(imAcq->method == IMACQ_CAM)
     {
+#ifdef ENABLE_OPENCV_NEW_API_VIDEO
+        imAcq->capture = new cv::VideoCapture(imAcq->camNo);
+#else
         imAcq->capture = cvCaptureFromCAM(imAcq->camNo);
+#endif        
 
         if(imAcq->capture == NULL)
         {
@@ -64,14 +69,18 @@ void imAcqInit(ImAcq *imAcq)
     }
     else if(imAcq->method == IMACQ_VID)
     {
+#ifdef ENABLE_OPENCV_NEW_API_VIDEO
+        imAcq->capture = new cv::VideoCapture(imAcq->imgPath);
+#else
         imAcq->capture = cvCaptureFromAVI(imAcq->imgPath);
+#endif
 
         if(imAcq->capture == NULL)
         {
             printf("Error: Unable to open video\n");
             exit(0);
         }
-
+#if 0        
         // take all frames
         if(imAcq->lastFrame == 0)
             imAcq->lastFrame = imAcqVidGetNumberOfFrames(imAcq); //This sometimes returns garbage
@@ -91,15 +100,18 @@ void imAcqInit(ImAcq *imAcq)
                    imAcq->currentFrame, imAcq->lastFrame);
             exit(1);
         }
-
+#endif
         // set the video position to the correct frame
         //This produces strange results on some videos and is deactivated for now.
         //imAcqVidSetNextFrameNumber(imAcq, imAcq->currentFrame);
     }
     else if(imAcq->method == IMACQ_STREAM)
     {
+#ifdef ENABLE_OPENCV_NEW_API_VIDEO
+        imAcq->capture = new cv::VideoCapture(imAcq->imgPath);
+#else
         imAcq->capture = cvCaptureFromFile(imAcq->imgPath);
-
+#endif        
         if(imAcq->capture == NULL)
         {
             printf("Error: Unable to open video\n");
@@ -116,7 +128,16 @@ void imAcqFree(ImAcq *imAcq)
 {
     if((imAcq->method == IMACQ_CAM) || (imAcq->method == IMACQ_VID) || (imAcq->method == IMACQ_STREAM))
     {
+#ifdef ENABLE_OPENCV_NEW_API_VIDEO
+        delete imAcq->capture;
+        imAcq->capture = NULL;
+        if (imAcq->writer){
+            delete imAcq->writer;
+            imAcq->writer = NULL;
+        }
+#else        
         cvReleaseCapture(&imAcq->capture);
+#endif        
     }
 
     free(imAcq);
@@ -157,7 +178,11 @@ IplImage *imAcqGetImgByCurrentTime(ImAcq *imAcq)
     if((imAcq->method == IMACQ_CAM) || (imAcq->method == IMACQ_STREAM))
     {
         //printf("grabbing image from sensor");
+#ifdef ENABLE_OPENCV_NEW_API_VIDEO
+//        return imAcqGrab(imAcq);
+#else        
         return imAcqGrab(imAcq->capture);
+#endif        
     }
 
     float secondsPassed = (cvGetTickCount() - imAcq->startTime) / cvGetTickFrequency();
@@ -179,7 +204,11 @@ IplImage *imAcqGetImg(ImAcq *imAcq)
 
     if(imAcq->method == IMACQ_CAM || imAcq->method == IMACQ_VID)
     {
+#ifdef ENABLE_OPENCV_NEW_API_VIDEO
+//        img = imAcqGrab(imAcq);
+#else        
         img = imAcqGrab(imAcq->capture);
+#endif        
     }
 
     if(imAcq->method == IMACQ_IMGS)
@@ -270,16 +299,55 @@ int imAcqVidGetNextFrameNumber(ImAcq *imAcq)
     // OpenCV index starts with 0
     // maybe a OpenCV bug: cvGetCaptureProperty with CV_CAP_PROP_POS_FRAMES returns the LAST
     // frame number to be encoded not the NEXT
+#ifdef ENABLE_OPENCV_NEW_API_VIDEO
+    return ((int) imAcq->capture->get(CV_CAP_PROP_POS_FRAMES)) + 2;
+#else    
     return ((int) cvGetCaptureProperty(imAcq->capture , CV_CAP_PROP_POS_FRAMES)) + 2;
+#endif    
 }
 
 void imAcqVidSetNextFrameNumber(ImAcq *imAcq, int nFrame)
 {
+#ifdef ENABLE_OPENCV_NEW_API_VIDEO
+    imAcq->capture->set(CV_CAP_PROP_POS_FRAMES, nFrame - 2.0);
+#else    
     // OpenCV index starts with 0
     cvSetCaptureProperty(imAcq->capture , CV_CAP_PROP_POS_FRAMES, nFrame - 2.0);
+#endif    
 }
 
 int imAcqVidGetNumberOfFrames(ImAcq *imAcq)
 {
+#ifdef ENABLE_OPENCV_NEW_API_VIDEO
+    return (int) imAcq->capture->get(CV_CAP_PROP_FRAME_COUNT);
+#else    
     return ((int) cvGetCaptureProperty(imAcq->capture , CV_CAP_PROP_FRAME_COUNT));
+#endif    
+}
+
+cv::Mat imAcqGetImg_new(ImAcq* imAcq)
+{
+    cv::Mat frame;
+    bool b = imAcq->capture->read(frame);
+//    imwrite("mat.jpg", frame);
+    if (!b || frame.empty()){
+        exit(0);
+    }
+    return frame;
+}
+
+void imAcqWriteImage(ImAcq* imAcq, cv::Mat& frame, const char* pathName)
+{
+    int fourcc = CV_FOURCC('X', 'V', 'I', 'D');
+    int width = frame.cols;
+    int height = frame.rows;
+    int fps = 25;
+    if (NULL == imAcq->writer){
+        imAcq->writer = new cv::VideoWriter();
+    }
+    cv::VideoWriter* writer = imAcq->writer;    
+    if(!writer->isOpened()){
+        writer->open(pathName, fourcc, 25, cvSize(width, height));
+    }
+    (*writer) << frame;
 }

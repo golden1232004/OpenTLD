@@ -37,7 +37,11 @@ using namespace cv;
 void Main::doWork()
 {
 	Trajectory trajectory;
-    IplImage *img = imAcqGetImg(imAcq);
+//    IplImage *img = imAcqGetImg(imAcq);
+    Mat img_ = imAcqGetImg_new(imAcq);
+    IplImage Iplimg = img_;
+    IplImage *img = &Iplimg;
+    cvSaveImage("iplImage.jpg", img);
     Mat grey(img->height, img->width, CV_8UC1);
     cvtColor(cvarrToMat(img), grey, CV_BGR2GRAY);
 
@@ -108,8 +112,10 @@ void Main::doWork()
 
         if(!reuseFrameOnce)
         {
-            cvReleaseImage(&img);
-            img = imAcqGetImg(imAcq);
+            //cvReleaseImage(&img);
+            img_ = imAcqGetImg_new(imAcq);
+            Iplimg = img_;
+            img = &Iplimg;
 
             if(img == NULL)
             {
@@ -140,7 +146,15 @@ void Main::doWork()
                 fprintf(resultsFile, "%d NaN NaN NaN NaN NaN\n", imAcq->currentFrame - 1);
             }
         }
-
+        if(writeImage){
+            if(tld->currBB != NULL){
+                cv::Point pt1(tld->currBB->x, tld->currBB->y);
+                cv::Point pt2(tld->currBB->x + tld->currBB->width,
+                              tld->currBB->y + tld->currBB->height);
+                rectangle(img_, pt1, pt2, Scalar(255, 0, 0), 3);
+                imAcqWriteImage(imAcq, img_, writePathName);
+            }
+        }
         double toc = (cvGetTickCount() - tic) / cvGetTickFrequency();
 
         toc = toc / 1000000;
@@ -286,7 +300,7 @@ void Main::doWork()
         }
     }
 
-    cvReleaseImage(&img);
+    //cvReleaseImage(&img);
     img = NULL;
 
     if(exportModelAfterRun)

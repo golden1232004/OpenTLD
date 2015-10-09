@@ -30,7 +30,9 @@
 #define IMACQ_IMPL_H_
 
 #include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
 
+#define ENABLE_OPENCV_NEW_API_VIDEO
 /**
  * Capturing method
  */
@@ -47,7 +49,12 @@ typedef struct
 {
     int method;
     const char *imgPath;
+#ifdef ENABLE_OPENCV_NEW_API_VIDEO
+    cv::VideoCapture *capture;
+    cv::VideoWriter *writer;
+#else    
     CvCapture *capture;
+#endif    
     int lastFrame;
     int currentFrame;
     int startFrame;
@@ -76,5 +83,10 @@ IplImage *imAcqLoadVidFrame(CvCapture *capture);
 IplImage *imAcqGrab(CvCapture *capture);
 void imAcqAdvance(ImAcq *imAcq);
 void imAcqFree(ImAcq *);
+
+
+///////////////////////////////////new API////////////////////////////
+cv::Mat imAcqGetImg_new(ImAcq* imAcq);
+void    imAcqWriteImage(ImAcq* imAcq, cv::Mat& frame, const char* pathName);
 
 #endif /* IMACQ_H_ */

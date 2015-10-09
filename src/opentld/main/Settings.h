@@ -59,6 +59,7 @@ public:
     bool m_saveOutput; //!< specifies whether to save visual output
     bool m_alternating; //!< if set to true, detector is disabled while tracker is running.
     bool m_exportModelAfterRun; //!< if set to true, model is exported after run.
+    bool m_writeImage;  // write image with rect
     int m_trajectory; //!< specifies the number of the last frames which are considered by the trajectory; 0 disables the trajectory
     int m_method; //!< method of capturing: IMACQ_CAM, IMACQ_IMGS or IMACQ_VID
     int m_startFrame; //!< first frame of capturing
@@ -81,6 +82,7 @@ public:
     std::string m_outputDir; //!< required if saveOutput = true, no default
     std::string m_printResults; //!< path to the file were the results should be printed; NULL -> results will not be printed
     std::string m_printTiming; //!< path to the file were the timings should be printed; NULL -> results will not be printed
+    std::string m_writePathName; //!< write image path name
     std::vector<int> m_initialBoundingBox; //!< Initial Bounding Box can be specified here
 };
 

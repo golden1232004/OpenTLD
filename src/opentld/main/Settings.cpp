@@ -46,6 +46,7 @@ Settings::Settings() :
     m_saveOutput(false),
     m_alternating(false),
     m_exportModelAfterRun(false),
+    m_writeImage(false),
     m_trajectory(0),
     m_method(IMACQ_CAM),
     m_startFrame(1),
@@ -63,6 +64,7 @@ Settings::Settings() :
     m_threshold(0.7),
     m_proportionalShift(0.1),
     m_modelExportFile("model"),
+    m_writePathName(""),
     m_initialBoundingBox(vector<int>())
 {
 }

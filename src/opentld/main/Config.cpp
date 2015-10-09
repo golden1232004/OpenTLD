@@ -86,7 +86,7 @@ int Config::init(int argc, char **argv)
     // check cli arguments
     int c;
 
-    while((c = getopt(argc, argv, "a:b:d:e:fhi:j:m:n:Op:qst:z:")) != -1)
+    while((c = getopt(argc, argv, "a:b:d:e:fhi:j:m:n:Op:qst:w:z:")) != -1)
     {
         switch(c)
         {
@@ -173,6 +173,10 @@ int Config::init(int argc, char **argv)
         case 't':
             m_settings.m_threshold = atof(optarg);
             m_thetaSet = true;
+            break;
+        case 'w':
+            m_settings.m_writeImage = true;
+            m_settings.m_writePathName = optarg;
             break;
         case 'z':
             m_settings.m_lastFrame = atoi(optarg);
@@ -455,6 +459,8 @@ int Config::configure(Main *main)
     main->loadModel = m_settings.m_loadModel;
     main->modelPath = (m_settings.m_modelPath.empty()) ? NULL : m_settings.m_modelPath.c_str();
     main->seed = m_settings.m_seed;
+    main->writeImage = m_settings.m_writeImage;
+    main->writePathName = m_settings.m_writePathName.c_str();
 
     if(m_settings.m_initialBoundingBox.size() > 0)
     {

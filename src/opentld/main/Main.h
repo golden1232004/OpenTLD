@@ -56,6 +56,8 @@ public:
     bool reinit;
     bool exportModelAfterRun;
     bool loadModel;
+    bool writeImage;
+    const char *writePathName;
     const char *modelPath;
     const char *modelExportFile;
     int seed;
@@ -88,6 +90,8 @@ public:
         gui = NULL;
         modelPath = NULL;
         imAcq = NULL;
+        writeImage = false;
+        writePathName = "";
     }
 
     ~Main()
